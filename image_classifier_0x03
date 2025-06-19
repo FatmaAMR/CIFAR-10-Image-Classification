@@ -1,0 +1,1013 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyOoI3eOsTG7LKCbOIG/alij",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/FatmaAMR/CIFAR-10-Image-Classification/blob/main/image_classifier_0x03\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Data Collection**"
+      ],
+      "metadata": {
+        "id": "zyokENTujO_7"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from __future__ import print_function\n",
+        "from tensorflow.keras.datasets import cifar10\n",
+        "from tensorflow.keras.preprocessing.image import ImageDataGenerator\n",
+        "from tensorflow.keras.models import Sequential\n",
+        "from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten\n",
+        "from tensorflow.keras.layers import Conv2D, MaxPooling2D\n",
+        "from tensorflow.keras.models import load_model\n",
+        "from tensorflow.keras.utils import to_categorical\n",
+        "import numpy as np\n",
+        "from tensorflow.keras.optimizers import SGD\n",
+        "import os\n",
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt"
+      ],
+      "metadata": {
+        "id": "nWoscEITjpVc"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "batch_size = 32\n",
+        "num_classes = 10\n",
+        "epochs = 10"
+      ],
+      "metadata": {
+        "id": "y06ZbNm7kLij"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Data Preprocessing**"
+      ],
+      "metadata": {
+        "id": "cfHXWThsjS1p"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "(x_train, y_train), (x_test, y_test) = cifar10.load_data()\n",
+        "\n",
+        "print('x_train shape:', x_train.shape)\n",
+        "print(x_train.shape[0], 'train samples')\n",
+        "print(x_test.shape[0], 'test samples')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "C9nsBimIkUYl",
+        "outputId": "85d44350-843f-4ac2-e891-ece458f8644d"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Downloading data from https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz\n",
+            "\u001b[1m170498071/170498071\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m2s\u001b[0m 0us/step\n",
+            "x_train shape: (50000, 32, 32, 3)\n",
+            "50000 train samples\n",
+            "10000 test samples\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "x_train = x_train.astype('float32')\n",
+        "x_test = x_test.astype('float32')\n",
+        "x_train /= 255\n",
+        "x_test /= 255"
+      ],
+      "metadata": {
+        "id": "q3AdtikIkhP5"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "y_train = to_categorical(y_train, num_classes)\n",
+        "y_test = to_categorical(y_test, num_classes)"
+      ],
+      "metadata": {
+        "id": "1Qn-NqLXkm4u"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Model Building**"
+      ],
+      "metadata": {
+        "id": "WZMMUakgjZEI"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model = Sequential()\n",
+        "model.add(Conv2D(32, (3,3), padding='same',\n",
+        "                 input_shape = x_train.shape[1: ]))\n",
+        "model.add(Activation('relu'))\n",
+        "model.add(Conv2D(32, (3,3)))\n",
+        "model.add(Activation('relu'))\n",
+        "model.add(MaxPooling2D(pool_size=(2,2)))\n",
+        "model.add(Dropout(0.25))\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "lcDZDhzbk3X-",
+        "outputId": "07fb33ae-38ed-496a-bea3-8d2653d356a3"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/keras/src/layers/convolutional/base_conv.py:107: UserWarning: Do not pass an `input_shape`/`input_dim` argument to a layer. When using Sequential models, prefer using an `Input(shape)` object as the first layer in the model instead.\n",
+            "  super().__init__(activity_regularizer=activity_regularizer, **kwargs)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model.add(Conv2D(64, (3,3), padding='same'))\n",
+        "model.add(Activation('relu'))\n",
+        "model.add(Conv2D(64, (3,3)))\n",
+        "model.add(Activation('relu'))\n",
+        "model.add(MaxPooling2D(pool_size=(2,2)))\n",
+        "model.add(Dropout(0.25))"
+      ],
+      "metadata": {
+        "id": "djE4RQ9Xl6Fh"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model.add(Flatten())\n",
+        "model.add(Dense(512))\n",
+        "model.add(Activation('relu'))\n",
+        "model.add(Dropout(0.5))\n",
+        "model.add(Dense(num_classes))\n",
+        "model.add(Activation('softmax'))"
+      ],
+      "metadata": {
+        "id": "sRmEW3Z_mIJd"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model.compile(loss='categorical_crossentropy',\n",
+        "              optimizer = SGD(0.01) , metrics=['accuracy'])"
+      ],
+      "metadata": {
+        "id": "iseMG4WWmSES"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(model.summary())"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 739
+        },
+        "id": "LkzaxbpTmhBL",
+        "outputId": "6649bfa5-f43e-441b-bd3f-ea048bca2bc8"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1mModel: \"sequential_1\"\u001b[0m\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\">Model: \"sequential_1\"</span>\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓\n",
+              "┃\u001b[1m \u001b[0m\u001b[1mLayer (type)                        \u001b[0m\u001b[1m \u001b[0m┃\u001b[1m \u001b[0m\u001b[1mOutput Shape               \u001b[0m\u001b[1m \u001b[0m┃\u001b[1m \u001b[0m\u001b[1m        Param #\u001b[0m\u001b[1m \u001b[0m┃\n",
+              "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩\n",
+              "│ conv2d_1 (\u001b[38;5;33mConv2D\u001b[0m)                    │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m32\u001b[0m, \u001b[38;5;34m32\u001b[0m, \u001b[38;5;34m32\u001b[0m)          │             \u001b[38;5;34m896\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_1 (\u001b[38;5;33mActivation\u001b[0m)            │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m32\u001b[0m, \u001b[38;5;34m32\u001b[0m, \u001b[38;5;34m32\u001b[0m)          │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ conv2d_2 (\u001b[38;5;33mConv2D\u001b[0m)                    │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m30\u001b[0m, \u001b[38;5;34m30\u001b[0m, \u001b[38;5;34m32\u001b[0m)          │           \u001b[38;5;34m9,248\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_2 (\u001b[38;5;33mActivation\u001b[0m)            │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m30\u001b[0m, \u001b[38;5;34m30\u001b[0m, \u001b[38;5;34m32\u001b[0m)          │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ max_pooling2d (\u001b[38;5;33mMaxPooling2D\u001b[0m)         │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m32\u001b[0m)          │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout (\u001b[38;5;33mDropout\u001b[0m)                    │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m32\u001b[0m)          │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ conv2d_3 (\u001b[38;5;33mConv2D\u001b[0m)                    │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m64\u001b[0m)          │          \u001b[38;5;34m18,496\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_3 (\u001b[38;5;33mActivation\u001b[0m)            │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m64\u001b[0m)          │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ conv2d_4 (\u001b[38;5;33mConv2D\u001b[0m)                    │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m13\u001b[0m, \u001b[38;5;34m13\u001b[0m, \u001b[38;5;34m64\u001b[0m)          │          \u001b[38;5;34m36,928\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_4 (\u001b[38;5;33mActivation\u001b[0m)            │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m13\u001b[0m, \u001b[38;5;34m13\u001b[0m, \u001b[38;5;34m64\u001b[0m)          │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ max_pooling2d_1 (\u001b[38;5;33mMaxPooling2D\u001b[0m)       │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m64\u001b[0m)            │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout_1 (\u001b[38;5;33mDropout\u001b[0m)                  │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m64\u001b[0m)            │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ flatten (\u001b[38;5;33mFlatten\u001b[0m)                    │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m2304\u001b[0m)                │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense (\u001b[38;5;33mDense\u001b[0m)                        │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m512\u001b[0m)                 │       \u001b[38;5;34m1,180,160\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_5 (\u001b[38;5;33mActivation\u001b[0m)            │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m512\u001b[0m)                 │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout_2 (\u001b[38;5;33mDropout\u001b[0m)                  │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m512\u001b[0m)                 │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense_1 (\u001b[38;5;33mDense\u001b[0m)                      │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m10\u001b[0m)                  │           \u001b[38;5;34m5,130\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_6 (\u001b[38;5;33mActivation\u001b[0m)            │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m10\u001b[0m)                  │               \u001b[38;5;34m0\u001b[0m │\n",
+              "└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓\n",
+              "┃<span style=\"font-weight: bold\"> Layer (type)                         </span>┃<span style=\"font-weight: bold\"> Output Shape                </span>┃<span style=\"font-weight: bold\">         Param # </span>┃\n",
+              "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩\n",
+              "│ conv2d_1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                    │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)          │             <span style=\"color: #00af00; text-decoration-color: #00af00\">896</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Activation</span>)            │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)          │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ conv2d_2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                    │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">30</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">30</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)          │           <span style=\"color: #00af00; text-decoration-color: #00af00\">9,248</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Activation</span>)            │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">30</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">30</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)          │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ max_pooling2d (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">MaxPooling2D</span>)         │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)          │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dropout</span>)                    │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)          │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ conv2d_3 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                    │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)          │          <span style=\"color: #00af00; text-decoration-color: #00af00\">18,496</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_3 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Activation</span>)            │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)          │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ conv2d_4 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                    │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">13</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">13</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)          │          <span style=\"color: #00af00; text-decoration-color: #00af00\">36,928</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_4 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Activation</span>)            │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">13</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">13</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)          │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ max_pooling2d_1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">MaxPooling2D</span>)       │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)            │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout_1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dropout</span>)                  │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)            │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ flatten (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Flatten</span>)                    │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">2304</span>)                │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dense</span>)                        │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">512</span>)                 │       <span style=\"color: #00af00; text-decoration-color: #00af00\">1,180,160</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_5 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Activation</span>)            │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">512</span>)                 │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout_2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dropout</span>)                  │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">512</span>)                 │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense_1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dense</span>)                      │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">10</span>)                  │           <span style=\"color: #00af00; text-decoration-color: #00af00\">5,130</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ activation_6 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Activation</span>)            │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">10</span>)                  │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Total params: \u001b[0m\u001b[38;5;34m1,250,858\u001b[0m (4.77 MB)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Total params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">1,250,858</span> (4.77 MB)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Trainable params: \u001b[0m\u001b[38;5;34m1,250,858\u001b[0m (4.77 MB)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Trainable params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">1,250,858</span> (4.77 MB)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Non-trainable params: \u001b[0m\u001b[38;5;34m0\u001b[0m (0.00 B)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Non-trainable params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> (0.00 B)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "None\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "### **Model trinning**"
+      ],
+      "metadata": {
+        "id": "bZiP08ENnNlb"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from re import VERBOSE\n",
+        "history = model.fit(x_train, y_train,\n",
+        "                    batch_size=batch_size,\n",
+        "                    epochs=epochs,\n",
+        "                    validation_data=(x_test, y_test),\n",
+        "                    shuffle=True,\n",
+        "                    verbose=1)\n",
+        "\n",
+        "model.save(\"cifar10_model.h5\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "7x97iMUmnY_E",
+        "outputId": "3927fef8-c8ec-450c-f568-83769401e077"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch 1/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m255s\u001b[0m 162ms/step - accuracy: 0.1697 - loss: 2.1997 - val_accuracy: 0.3175 - val_loss: 1.8709\n",
+            "Epoch 2/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m261s\u001b[0m 167ms/step - accuracy: 0.3305 - loss: 1.8424 - val_accuracy: 0.4121 - val_loss: 1.6585\n",
+            "Epoch 3/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m256s\u001b[0m 163ms/step - accuracy: 0.4058 - loss: 1.6327 - val_accuracy: 0.4681 - val_loss: 1.4579\n",
+            "Epoch 4/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m261s\u001b[0m 167ms/step - accuracy: 0.4600 - loss: 1.4933 - val_accuracy: 0.5126 - val_loss: 1.3479\n",
+            "Epoch 5/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m259s\u001b[0m 165ms/step - accuracy: 0.5039 - loss: 1.3783 - val_accuracy: 0.5371 - val_loss: 1.3053\n",
+            "Epoch 6/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m285s\u001b[0m 180ms/step - accuracy: 0.5360 - loss: 1.2969 - val_accuracy: 0.5813 - val_loss: 1.1642\n",
+            "Epoch 7/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m290s\u001b[0m 159ms/step - accuracy: 0.5672 - loss: 1.2252 - val_accuracy: 0.6044 - val_loss: 1.1106\n",
+            "Epoch 8/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m283s\u001b[0m 173ms/step - accuracy: 0.5813 - loss: 1.1711 - val_accuracy: 0.6305 - val_loss: 1.0505\n",
+            "Epoch 9/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m313s\u001b[0m 167ms/step - accuracy: 0.6005 - loss: 1.1251 - val_accuracy: 0.6331 - val_loss: 1.0289\n",
+            "Epoch 10/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m284s\u001b[0m 182ms/step - accuracy: 0.6194 - loss: 1.0782 - val_accuracy: 0.6484 - val_loss: 1.0076\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. \n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "### **Testing model**"
+      ],
+      "metadata": {
+        "id": "ys1l_LTtoTRu"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import cv2\n",
+        "import matplotlib.pyplot as plt\n",
+        "import numpy as np\n",
+        "from tensorflow.keras.models import load_model"
+      ],
+      "metadata": {
+        "id": "Aa_BmjixoZcS"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "img_row , img_hight, img_depth = 32, 32, 3\n",
+        "classifier = load_model('cifar10_model.h5')\n",
+        "color = True\n",
+        "scale = 8"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "lQpV27Jgo0Fz",
+        "outputId": "297a557a-53a8-48b4-dd02-e51655f50d6b"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def draw_test(name, res, input_im, scale, img_row, img_hight):\n",
+        "  Black = [0, 0, 0]\n",
+        "  res = np.argmax(res, axis=1)\n",
+        "  if res[0] == 0:\n",
+        "    n_res = 'airplane'\n",
+        "  if res[0] == 1:\n",
+        "    n_res = 'automobile'\n",
+        "  if res[0] == 2:\n",
+        "    n_res = 'bird'\n",
+        "  if res[0] == 3:\n",
+        "    n_res = 'cat'\n",
+        "  if res[0] == 4:\n",
+        "    n_res = 'deer'\n",
+        "  if res[0] == 5:\n",
+        "    n_res = 'dog'\n",
+        "  if res[0] == 6:\n",
+        "    n_res = 'frog'\n",
+        "  if res[0] == 7:\n",
+        "    n_res = 'horse'\n",
+        "  if res[0] == 8:\n",
+        "    n_res = 'ship'\n",
+        "  if res[0] == 9:\n",
+        "    n_res = 'truck'\n",
+        "\n",
+        "  expanded_image = cv2.copyMakeBorder(input_im, 0, 0, 0,\n",
+        "                                    imageL.shape[0]*2, cv2.BORDER_CONSTANT, value=BLACK)\n",
+        "\n",
+        "  if(color == False):\n",
+        "    expanded_image = cv2.cvtColor(expanded_image, cv2.COLOR_GRAY2BGR)\n",
+        "\n",
+        "  cv2.putText(expanded_image, str(pred), (300, 80),\n",
+        "              cv2.FONT_HERSHEY_COMPLEX_SMALL, 3, (0, 255, 0), 2)\n",
+        "\n",
+        "\n",
+        "for i in range(0, 10):\n",
+        "  rand = np.random.randint(0, len(x_test))\n",
+        "  input_im = x_test[rand]\n",
+        "  imageL = cv2.resize(input_im, None, fx=scale, fy=scale,\n",
+        "                      interpolation=cv2.INTER_CUBIC)\n",
+        "  input_im = input_im.reshape(1, img_row, img_hight, img_depth)\n",
+        "\n",
+        "  res = str(classifier.predict(input_im, 1, verbose=0)[0])\n",
+        "\n",
+        "\n",
+        "  draw_test = str(classifier.predict(input_im, 1, verbose=0)[0])\n",
+        "\n",
+        "  cv2.waitKey(0)\n",
+        "\n",
+        "\n",
+        "cv2.destroyAllWindows()"
+      ],
+      "metadata": {
+        "id": "UzjtRErFpDUM"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "### **Improving performance**"
+      ],
+      "metadata": {
+        "id": "K9O_4MA4rIbi"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import tensorflow as tf\n",
+        "from tensorflow.keras import callbacks\n",
+        "from tensorflow.keras import optimizers\n",
+        "from tensorflow.keras.datasets import cifar10\n",
+        "\n",
+        "\n",
+        "from tensorflow.keras.preprocessing.image import ImageDataGenerator\n",
+        "from tensorflow.keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D, BatchNormalization\n",
+        "from tensorflow.keras.applications import vgg16 as vgg"
+      ],
+      "metadata": {
+        "id": "7D4z8WN8qrvM"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from typing_extensions import LiteralString\n",
+        "batch_size = 32\n",
+        "num_classes = 10\n",
+        "epochs = 1\n",
+        "momentum =0.9\n",
+        "learnnig_rate = 1e-9"
+      ],
+      "metadata": {
+        "id": "W0OSXMsfspZD"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import scipy.misc\n",
+        "(x_train, y_train), (x_test, y_test) = cifar10.load_data()\n",
+        "\n",
+        "x_train = np.array([cv2.resize(img, (48, 48), interpolation=cv2.INTER_AREA) for img in x_train])\n",
+        "x_test = np.array([cv2.resize(img, (48, 48),  interpolation=cv2.INTER_AREA) for img in x_test  ])"
+      ],
+      "metadata": {
+        "id": "OhfNYa7TtGZj"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from tensorflow.keras.utils import to_categorical\n",
+        "y_train = to_categorical(y_train, num_classes)\n",
+        "y_test = to_categorical(y_test, num_classes)"
+      ],
+      "metadata": {
+        "id": "8ZIsY6o-t-VH"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "### **pre-trained model**"
+      ],
+      "metadata": {
+        "id": "UhD00EYWuwxl"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from tensorflow.keras.applications import vgg16 as vgg\n",
+        "\n",
+        "base_model = vgg.VGG16(weights='imagenet',\n",
+        "                       include_top=False,\n",
+        "                       input_shape=(48, 48, 3))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "FnOyUS42u4i9",
+        "outputId": "e315ba20-21d8-405f-9c52-b56f8f285e34"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Downloading data from https://storage.googleapis.com/tensorflow/keras-applications/vgg16/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5\n",
+            "\u001b[1m58889256/58889256\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m0s\u001b[0m 0us/step\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "last = base_model.get_layer('block3_pool').output"
+      ],
+      "metadata": {
+        "id": "iB-nN3NLvKR5"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "x = GlobalAveragePooling2D()(last)\n",
+        "x = BatchNormalization()(x)\n",
+        "x = Dense(256, activation='relu')(x)\n",
+        "x = Dropout(0.5)(x)\n"
+      ],
+      "metadata": {
+        "id": "BvSbU95PvSfc"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from tensorflow.keras.models import Model\n",
+        "\n",
+        "# Define the top layer\n",
+        "top = Dense(n_classes, activation='softmax')(x)\n",
+        "\n",
+        "# Create the final model by combining the base model and top layer\n",
+        "model = Model(inputs=base_model.input, outputs=top)"
+      ],
+      "metadata": {
+        "id": "nb7tSn7tvfQy"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "for layer in base_model.layers:\n",
+        "  layer.trainable = False\n",
+        "adam = optimizers.Adam(learning_rate=1e-4)  # Set learning rate here\n",
+        "model.compile(loss='binary_crossentropy',\n",
+        "              optimizer=adam,\n",
+        "              metrics=['accuracy'])"
+      ],
+      "metadata": {
+        "id": "SdF40BAxvxTg"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model.summary()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 690
+        },
+        "id": "8VUL3alTwVts",
+        "outputId": "1618042e-ff74-4085-fd64-6530f2fdc93d"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1mModel: \"functional_38\"\u001b[0m\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\">Model: \"functional_38\"</span>\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓\n",
+              "┃\u001b[1m \u001b[0m\u001b[1mLayer (type)                        \u001b[0m\u001b[1m \u001b[0m┃\u001b[1m \u001b[0m\u001b[1mOutput Shape               \u001b[0m\u001b[1m \u001b[0m┃\u001b[1m \u001b[0m\u001b[1m        Param #\u001b[0m\u001b[1m \u001b[0m┃\n",
+              "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩\n",
+              "│ input_layer_2 (\u001b[38;5;33mInputLayer\u001b[0m)           │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m48\u001b[0m, \u001b[38;5;34m48\u001b[0m, \u001b[38;5;34m3\u001b[0m)           │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block1_conv1 (\u001b[38;5;33mConv2D\u001b[0m)                │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m48\u001b[0m, \u001b[38;5;34m48\u001b[0m, \u001b[38;5;34m64\u001b[0m)          │           \u001b[38;5;34m1,792\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block1_conv2 (\u001b[38;5;33mConv2D\u001b[0m)                │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m48\u001b[0m, \u001b[38;5;34m48\u001b[0m, \u001b[38;5;34m64\u001b[0m)          │          \u001b[38;5;34m36,928\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block1_pool (\u001b[38;5;33mMaxPooling2D\u001b[0m)           │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m24\u001b[0m, \u001b[38;5;34m24\u001b[0m, \u001b[38;5;34m64\u001b[0m)          │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block2_conv1 (\u001b[38;5;33mConv2D\u001b[0m)                │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m24\u001b[0m, \u001b[38;5;34m24\u001b[0m, \u001b[38;5;34m128\u001b[0m)         │          \u001b[38;5;34m73,856\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block2_conv2 (\u001b[38;5;33mConv2D\u001b[0m)                │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m24\u001b[0m, \u001b[38;5;34m24\u001b[0m, \u001b[38;5;34m128\u001b[0m)         │         \u001b[38;5;34m147,584\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block2_pool (\u001b[38;5;33mMaxPooling2D\u001b[0m)           │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m128\u001b[0m)         │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_conv1 (\u001b[38;5;33mConv2D\u001b[0m)                │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m256\u001b[0m)         │         \u001b[38;5;34m295,168\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_conv2 (\u001b[38;5;33mConv2D\u001b[0m)                │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m256\u001b[0m)         │         \u001b[38;5;34m590,080\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_conv3 (\u001b[38;5;33mConv2D\u001b[0m)                │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m12\u001b[0m, \u001b[38;5;34m256\u001b[0m)         │         \u001b[38;5;34m590,080\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_pool (\u001b[38;5;33mMaxPooling2D\u001b[0m)           │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m256\u001b[0m)           │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ global_average_pooling2d             │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m256\u001b[0m)                 │               \u001b[38;5;34m0\u001b[0m │\n",
+              "│ (\u001b[38;5;33mGlobalAveragePooling2D\u001b[0m)             │                             │                 │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ batch_normalization                  │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m256\u001b[0m)                 │           \u001b[38;5;34m1,024\u001b[0m │\n",
+              "│ (\u001b[38;5;33mBatchNormalization\u001b[0m)                 │                             │                 │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense_2 (\u001b[38;5;33mDense\u001b[0m)                      │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m256\u001b[0m)                 │          \u001b[38;5;34m65,792\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout_3 (\u001b[38;5;33mDropout\u001b[0m)                  │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m256\u001b[0m)                 │               \u001b[38;5;34m0\u001b[0m │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense_5 (\u001b[38;5;33mDense\u001b[0m)                      │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m10\u001b[0m)                  │           \u001b[38;5;34m2,570\u001b[0m │\n",
+              "└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓\n",
+              "┃<span style=\"font-weight: bold\"> Layer (type)                         </span>┃<span style=\"font-weight: bold\"> Output Shape                </span>┃<span style=\"font-weight: bold\">         Param # </span>┃\n",
+              "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩\n",
+              "│ input_layer_2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">InputLayer</span>)           │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">48</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">48</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">3</span>)           │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block1_conv1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">48</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">48</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)          │           <span style=\"color: #00af00; text-decoration-color: #00af00\">1,792</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block1_conv2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">48</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">48</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)          │          <span style=\"color: #00af00; text-decoration-color: #00af00\">36,928</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block1_pool (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">MaxPooling2D</span>)           │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">24</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">24</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)          │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block2_conv1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">24</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">24</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">128</span>)         │          <span style=\"color: #00af00; text-decoration-color: #00af00\">73,856</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block2_conv2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">24</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">24</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">128</span>)         │         <span style=\"color: #00af00; text-decoration-color: #00af00\">147,584</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block2_pool (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">MaxPooling2D</span>)           │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">128</span>)         │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_conv1 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)         │         <span style=\"color: #00af00; text-decoration-color: #00af00\">295,168</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_conv2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)         │         <span style=\"color: #00af00; text-decoration-color: #00af00\">590,080</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_conv3 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)                │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">12</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)         │         <span style=\"color: #00af00; text-decoration-color: #00af00\">590,080</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ block3_pool (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">MaxPooling2D</span>)           │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)           │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ global_average_pooling2d             │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)                 │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "│ (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">GlobalAveragePooling2D</span>)             │                             │                 │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ batch_normalization                  │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)                 │           <span style=\"color: #00af00; text-decoration-color: #00af00\">1,024</span> │\n",
+              "│ (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">BatchNormalization</span>)                 │                             │                 │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense_2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dense</span>)                      │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)                 │          <span style=\"color: #00af00; text-decoration-color: #00af00\">65,792</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dropout_3 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dropout</span>)                  │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">256</span>)                 │               <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤\n",
+              "│ dense_5 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dense</span>)                      │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">10</span>)                  │           <span style=\"color: #00af00; text-decoration-color: #00af00\">2,570</span> │\n",
+              "└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Total params: \u001b[0m\u001b[38;5;34m1,804,874\u001b[0m (6.89 MB)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Total params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">1,804,874</span> (6.89 MB)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Trainable params: \u001b[0m\u001b[38;5;34m68,874\u001b[0m (269.04 KB)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Trainable params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">68,874</span> (269.04 KB)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Non-trainable params: \u001b[0m\u001b[38;5;34m1,736,000\u001b[0m (6.62 MB)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Non-trainable params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">1,736,000</span> (6.62 MB)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "### **training**"
+      ],
+      "metadata": {
+        "id": "zgLVCii4wk_l"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "train_datagen = ImageDataGenerator(\n",
+        "    rescale = 1./255,\n",
+        "    horizontal_flip = True\n",
+        ")"
+      ],
+      "metadata": {
+        "id": "8WMAnbnnw8pz"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "train_datagen.fit(x_train)\n",
+        "train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size)\n",
+        "val_datagen = ImageDataGenerator(\n",
+        "    rescale = 1./255,\n",
+        "    horizontal_flip = False\n",
+        ")\n",
+        "val_datagen.fit(x_test)\n",
+        "val_generator = val_datagen.flow(x_test, y_test, batch_size=batch_size)"
+      ],
+      "metadata": {
+        "id": "x22wrnM7xX3j"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "train_steps_per_epoch = x_train.shape[0] // batch_size\n",
+        "val_steps_per_epoch = x_test.shape[0] // batch_size"
+      ],
+      "metadata": {
+        "id": "-e4FjF0Ix6VM"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "history = model.fit(\n",
+        "    train_generator,\n",
+        "    steps_per_epoch=train_steps_per_epoch,\n",
+        "    epochs=epochs,\n",
+        "    validation_data=val_generator,\n",
+        "    validation_steps=val_steps_per_epoch,\n",
+        "    verbose=1\n",
+        ")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "bLi9SNyfyG30",
+        "outputId": "cc4acead-1472-402f-9ef3-7f5916acb45a"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/keras/src/trainers/data_adapters/py_dataset_adapter.py:121: UserWarning: Your `PyDataset` class should call `super().__init__(**kwargs)` in its constructor. `**kwargs` can include `workers`, `use_multiprocessing`, `max_queue_size`. Do not pass these arguments to `fit()`, as they will be ignored.\n",
+            "  self._warn_if_super_not_called()\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "\u001b[1m1562/1562\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m1086s\u001b[0m 694ms/step - accuracy: 0.2858 - loss: 0.3825 - val_accuracy: 0.5810 - val_loss: 0.2001\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## **Model Evaluation**"
+      ],
+      "metadata": {
+        "id": "mayv6ctXjai2"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "scores = model.evaluate(x_test, y_test, verbose=1)\n",
+        "print('Test loss:', scores[0])\n",
+        "print('Test accuracy:', scores[1])"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "nW3GDzbVnq1G",
+        "outputId": "121d78b9-dc96-4355-e74d-6a8c8922a4d2"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "\u001b[1m313/313\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m173s\u001b[0m 553ms/step - accuracy: 0.2085 - loss: 51.2363\n",
+            "Test loss: 50.825950622558594\n",
+            "Test accuracy: 0.2094999998807907\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
